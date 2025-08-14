@@ -1,31 +1,43 @@
+import os
+import json
+from oauth2client.service_account import ServiceAccountCredentials
+import gspread
 import cloudscraper
 import time
 import random
-import gspread
-import json
-import os
-from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 
+print("🚀 Script started...")
+
 # ==== WRITE CREDENTIALS.JSON FROM GITHUB SECRET ====
-if "CREDENTIALS_JSON" in os.environ:
+if "CREDENTIALS_JSON" not in os.environ:
+    print("❌ ERROR: CREDENTIALS_JSON secret not found.")
+    exit(1)
+
+try:
+    creds_content = os.environ["CREDENTIALS_JSON"]
+    print("✅ Secret loaded (length:", len(creds_content), ")")
     with open("credentials.json", "w") as f:
-        f.write(os.environ["CREDENTIALS_JSON"])
-
-# ==== MARKET HOURS CHECK ====
-now = datetime.now()
-start_time = now.replace(hour=9, minute=15, second=0, microsecond=0)
-end_time = now.replace(hour=15, minute=30, second=0, microsecond=0)
-
-if not (start_time <= now <= end_time):
-    print("⏳ Outside market hours. Exiting.")
-    exit()
+        f.write(creds_content)
+    print("✅ credentials.json file created")
+except Exception as e:
+    print("❌ ERROR writing credentials.json:", e)
+    exit(1)
 
 # ==== GOOGLE SHEETS SETUP ====
 SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-CREDS = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", SCOPE)
-CLIENT = gspread.authorize(CREDS)
+
+try:
+    CREDS = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", SCOPE)
+    CLIENT = gspread.authorize(CREDS)
+    print("✅ Google Sheets authorized successfully")
+except Exception as e:
+    print("❌ ERROR authorizing Google Sheets:", e)
+    exit(1)
+
 SHEET = CLIENT.open("Refreshcron").sheet1
+print("✅ Sheet opened successfully")
+
 
 # ==== NSE URL ====
 NSE_URL = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
