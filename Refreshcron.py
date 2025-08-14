@@ -1,4 +1,5 @@
 import os
+import base64
 import json
 from oauth2client.service_account import ServiceAccountCredentials
 import gspread
@@ -9,19 +10,19 @@ from datetime import datetime
 
 print("🚀 Script started...")
 
-# ==== WRITE CREDENTIALS.JSON FROM GITHUB SECRET ====
+# ==== DECODE CREDENTIALS FROM BASE64 SECRET ====
 if "CREDENTIALS_JSON" not in os.environ:
     print("❌ ERROR: CREDENTIALS_JSON secret not found.")
     exit(1)
 
 try:
-    creds_content = os.environ["CREDENTIALS_JSON"]
-    print("✅ Secret loaded (length:", len(creds_content), ")")
+    creds_b64 = os.environ["CREDENTIALS_JSON"]
+    creds_json = base64.b64decode(creds_b64).decode("utf-8")
     with open("credentials.json", "w") as f:
-        f.write(creds_content)
-    print("✅ credentials.json file created")
+        f.write(creds_json)
+    print("✅ credentials.json file created successfully")
 except Exception as e:
-    print("❌ ERROR writing credentials.json:", e)
+    print("❌ ERROR decoding credentials:", e)
     exit(1)
 
 # ==== GOOGLE SHEETS SETUP ====
@@ -35,9 +36,12 @@ except Exception as e:
     print("❌ ERROR authorizing Google Sheets:", e)
     exit(1)
 
-SHEET = CLIENT.open("Refreshcron").sheet1
-print("✅ Sheet opened successfully")
-
+try:
+    SHEET = CLIENT.open("Refreshcron").sheet1
+    print("✅ Sheet opened successfully")
+except Exception as e:
+    print("❌ ERROR opening sheet:", e)
+    exit(1)
 
 # ==== NSE URL ====
 NSE_URL = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
@@ -96,4 +100,4 @@ if __name__ == "__main__":
         nse_data = fetch_nse_oi()
         append_atm_to_sheet(nse_data)
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Error fetching/appending data: {e}")
