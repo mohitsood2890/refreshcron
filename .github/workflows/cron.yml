@@ -2,8 +2,12 @@ name: Run Refreshcron
 
 on:
   schedule:
-    - cron: "*/3 * * * *"  # Every 15 minutes
-  workflow_dispatch:
+    - cron: "*/3 * * * *"  # Every 3 minutes (UTC time)
+  workflow_dispatch:  # Allows manual trigger
+
+concurrency:
+  group: cron-job
+  cancel-in-progress: true
 
 jobs:
   run-script:
