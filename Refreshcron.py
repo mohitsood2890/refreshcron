@@ -122,10 +122,11 @@ def append_atm_to_sheet(data):
     print(f"✅ Logged ATM {atm_strike} at {row[0]} | Expiry: {expiry_date}")
 
 if __name__ == "__main__":
-    SHEET.update('A1:M1', [[
+    # Always set header without disturbing old data
+    SHEET.update('A1:S1', [[
         "Timestamp", "Expiry Date", "Strike Price",
-        "CE LTP", "CE IV", "CE Vol", "CE OI", "CE ΔOI",
-        "PE LTP", "PE IV", "PE Vol", "PE OI", "PE ΔOI"
+        "CE LTP", "CE IV", "CE Vol", "CE OI", "CE ΔOI", "CE Bid", "CE Ask", "CE Spread",
+        "PE LTP", "PE IV", "PE Vol", "PE OI", "PE ΔOI", "PE Bid", "PE Ask", "PE Spread"
     ]])
 
     try:
@@ -133,5 +134,6 @@ if __name__ == "__main__":
         append_atm_to_sheet(nse_data)
     except Exception as e:
         print(f"❌ Error fetching/appending data: {e}")
+
 
 
