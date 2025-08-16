@@ -30,3 +30,4 @@ jobs:
           CREDENTIALS_JSON: ${{ secrets.CREDENTIALS_JSON }}
         run: |
           python Refreshcron.py
+          nifty50.py
