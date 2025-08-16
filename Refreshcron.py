@@ -17,7 +17,7 @@ now_utc = datetime.utcnow()
 now_ist = now_utc + timedelta(hours=5, minutes=30)
 
 start_time = now_ist.replace(hour=9, minute=15, second=0, microsecond=0)
-end_time = now_ist.replace(hour=15, minute=30, second=0, microsecond=0)
+end_time = now_ist.replace(hour=15, minute=45, second=0, microsecond=0)
 
 if not (start_time <= now_ist <= end_time):
     print(f"⏳ Outside market hours ({now_ist.strftime('%H:%M:%S')} IST). Exiting.")
@@ -134,6 +134,7 @@ if __name__ == "__main__":
         append_atm_to_sheet(nse_data)
     except Exception as e:
         print(f"❌ Error fetching/appending data: {e}")
+
 
 
 
