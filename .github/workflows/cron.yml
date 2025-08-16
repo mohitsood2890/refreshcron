@@ -25,6 +25,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install cloudscraper gspread oauth2client pytz
+          pip install cloudscraper gspread oauth2client pytz pandas requests
 
       - name: Run Scripts
         env:
