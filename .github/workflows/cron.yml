@@ -24,12 +24,12 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install cloudscraper gspread oauth2client pytz
           pip install cloudscraper gspread oauth2client pytz pandas requests
+
 
       - name: Run Scripts
         env:
           CREDENTIALS_JSON: ${{ secrets.CREDENTIALS_JSON }}
         run: |
-          python Refreshcron.py
-          python nifty50.py
+          python Refreshcron.py || true
+          python nifty50.py || true
