@@ -6,17 +6,18 @@ import gspread
 import cloudscraper
 import time
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 
 print("🚀 Script started...")
+
+# ==== IST HELPER ====
+def get_ist_now():
+    return datetime.utcnow() + timedelta(hours=5, minutes=30)
+
 # ==== MARKET HOURS CHECK (IST) ====
-from datetime import timedelta
+now_ist = get_ist_now()
 
-# GitHub Actions uses UTC, so convert to IST (+5:30)
-now_utc = datetime.utcnow()
-now_ist = now_utc + timedelta(hours=5, minutes=30)
-
-start_time = now_ist.replace(hour=9, minute=15, second=0, microsecond=0)
+start_time = now_ist.replace(hour=9, minute=12, second=0, microsecond=0)
 end_time = now_ist.replace(hour=15, minute=45, second=0, microsecond=0)
 
 if not (start_time <= now_ist <= end_time):
@@ -67,11 +68,13 @@ def fetch_nse_oi():
     resp = scraper.get(NSE_URL, timeout=10)
     return resp.json()
 
+def format_num(x):
+    return x if isinstance(x, (int, float)) else ""
+
 def append_atm_to_sheet(data):
     underlying_value = data["records"]["underlyingValue"]
 
     expiry_date = data["records"]["expiryDates"][0] if data["records"]["expiryDates"] else "N/A"
-
     filtered_data = [d for d in data["records"]["data"] if d.get("expiryDate") == expiry_date]
     strikes = sorted([d["strikePrice"] for d in filtered_data if "CE" in d])
 
@@ -90,7 +93,7 @@ def append_atm_to_sheet(data):
     pe_spread = pe_ask - pe_bid if isinstance(pe_ask, (int, float)) and isinstance(pe_bid, (int, float)) else ""
 
     row = [
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        get_ist_now().strftime("%Y-%m-%d %H:%M:%S"),  # ✅ IST timestamp
         expiry_date,
         atm_strike,
         ce_data.get("lastPrice", ""),
@@ -119,7 +122,8 @@ def append_atm_to_sheet(data):
         "backgroundColor": {"red": 1, "green": 1, "blue": 0.8}  # Light yellow
     })
 
-    print(f"✅ Logged ATM {atm_strike} at {row[0]} | Expiry: {expiry_date}")
+    print(f"✅ Logged ATM {atm_strike} at {row[0]} IST | Expiry: {expiry_date}")
+
 
 if __name__ == "__main__":
     # Always set header without disturbing old data
@@ -134,7 +138,3 @@ if __name__ == "__main__":
         append_atm_to_sheet(nse_data)
     except Exception as e:
         print(f"❌ Error fetching/appending data: {e}")
-
-
-
-
