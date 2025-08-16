@@ -73,17 +73,15 @@ def fetch_nifty_spot():
     return data["records"]["underlyingValue"]  # ✅ NIFTY spot
 
 # ==== MAIN LOOP ====
-while True:
-    try:
-        price = fetch_nifty_spot()
-        timestamp = get_ist_now().strftime("%Y-%m-%d %H:%M:%S")
-        row = [timestamp, price]   # ✅ Column A = timestamp, Column B = price
+# ==== MAIN EXECUTION ====
+try:
+    price = fetch_nifty_spot()
+    timestamp = get_ist_now().strftime("%Y-%m-%d %H:%M:%S")
+    row = [timestamp, price]   # Column A = timestamp, Column B = price
 
-        SHEET.append_row(row, value_input_option="USER_ENTERED")
+    SHEET.append_row(row, value_input_option="USER_ENTERED")
 
-        print(f"✅ Logged NIFTY at {timestamp} = {price}")
-    except Exception as e:
-        print(f"❌ Error: {e}")
+    print(f"✅ Logged NIFTY at {timestamp} = {price}")
+except Exception as e:
+    print(f"❌ Error: {e}")
 
-    # Wait 3 minutes
-    time.sleep(180)
