@@ -25,7 +25,7 @@ jobs:
         run: |
           pip install cloudscraper gspread oauth2client
 
-      - name: Run Script
+      - name: Run Scripts
         env:
           CREDENTIALS_JSON: ${{ secrets.CREDENTIALS_JSON }}
         run: |
