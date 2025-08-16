@@ -7,23 +7,14 @@ import cloudscraper
 import time
 import random
 from datetime import datetime, timedelta
+import pytz  # ✅ Added for proper IST handling
 
 print("🚀 Script started...")
 
 # ==== IST HELPER ====
 def get_ist_now():
-    return datetime.utcnow() + timedelta(hours=5, minutes=30)
-
-# ==== MARKET HOURS CHECK (IST) ====
-now_ist = get_ist_now()
-
-start_time = now_ist.replace(hour=9, minute=12, second=0, microsecond=0)
-end_time = now_ist.replace(hour=15, minute=45, second=0, microsecond=0)
-
-if not (start_time <= now_ist <= end_time):
-    print(f"⏳ Outside market hours ({now_ist.strftime('%H:%M:%S')} IST). Exiting.")
-    exit()
-
+    ist = pytz.timezone("Asia/Kolkata")
+    return datetime.now(ist)
 
 # ==== DECODE CREDENTIALS FROM BASE64 SECRET ====
 if "CREDENTIALS_JSON" not in os.environ:
@@ -57,6 +48,26 @@ try:
 except Exception as e:
     print("❌ ERROR opening sheet:", e)
     exit(1)
+
+# ==== MARKET HOURS CHECK (IST) ====
+now_ist = get_ist_now()
+if not (datetime.strptime("09:12", "%H:%M").time() <= now_ist.time() <= datetime.strptime("15:45", "%H:%M").time()):
+    print(f"⏳ Outside market hours ({now_ist.strftime('%H:%M:%S')} IST). Skipping...")
+
+    try:
+        SHEET.insert_row(
+            [now_ist.strftime("%Y-%m-%d %H:%M:%S"), "Skipped (Outside Trading Hours)"],
+            index=2,
+            value_input_option="USER_ENTERED"
+        )
+        SHEET.format('A2:B2', {
+            "backgroundColor": {"red": 0.9, "green": 0.9, "blue": 0.9}  # Light gray
+        })
+        print("✅ Logged skip to Google Sheet")
+    except Exception as e:
+        print(f"⚠️ Could not log skip to Google Sheet: {e}")
+
+    exit()
 
 # ==== NSE URL ====
 NSE_URL = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
