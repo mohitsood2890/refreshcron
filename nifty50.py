@@ -6,12 +6,14 @@ import gspread
 import cloudscraper
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime, timedelta
+import pytz  # ✅ for timezone
 
 print("🚀 Script started...")
 
 # ==== IST TIME HELPER ====
 def get_ist_now():
-    return datetime.utcnow() + timedelta(hours=5, minutes=30)
+    ist = pytz.timezone("Asia/Kolkata")
+    return datetime.now(ist)
 
 # ==== DECODE CREDENTIALS FROM BASE64 SECRET ====
 if "CREDENTIALS_JSON" not in os.environ:
@@ -45,6 +47,20 @@ try:
 except Exception as e:
     print("❌ ERROR opening Sheet2:", e)
     exit(1)
+
+# ==== TIME CHECK (EXIT IF OUTSIDE TRADING HOURS) ====
+now = get_ist_now()
+if not (datetime.strptime("09:12", "%H:%M").time() <= now.time() <= datetime.strptime("15:45", "%H:%M").time()):
+    print("⏰ Outside trading hours, skipping execution...")
+
+    try:
+        SHEET.append_row([now.strftime("%Y-%m-%d %H:%M:%S"), "Skipped (Outside Trading Hours)"],
+                         value_input_option="USER_ENTERED")
+        print("✅ Logged skip to Google Sheet")
+    except Exception as e:
+        print(f"⚠️ Could not log skip to Google Sheet: {e}")
+
+    exit()
 
 # ==== NSE API ====
 NSE_URL = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
