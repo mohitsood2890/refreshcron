@@ -69,6 +69,7 @@ def fetch_nse_oi():
 
 def append_atm_to_sheet(data):
     underlying_value = data["records"]["underlyingValue"]
+
     expiry_date = data["records"]["expiryDates"][0] if data["records"]["expiryDates"] else "N/A"
 
     filtered_data = [d for d in data["records"]["data"] if d.get("expiryDate") == expiry_date]
@@ -80,6 +81,14 @@ def append_atm_to_sheet(data):
     ce_data = atm_data.get("CE", {})
     pe_data = atm_data.get("PE", {})
 
+    ce_bid = ce_data.get("bidprice", "")
+    ce_ask = ce_data.get("askPrice", "")
+    pe_bid = pe_data.get("bidprice", "")
+    pe_ask = pe_data.get("askPrice", "")
+
+    ce_spread = ce_ask - ce_bid if isinstance(ce_ask, (int, float)) and isinstance(ce_bid, (int, float)) else ""
+    pe_spread = pe_ask - pe_bid if isinstance(pe_ask, (int, float)) and isinstance(pe_bid, (int, float)) else ""
+
     row = [
         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         expiry_date,
@@ -89,16 +98,25 @@ def append_atm_to_sheet(data):
         ce_data.get("totalTradedVolume", ""),
         ce_data.get("openInterest", ""),
         ce_data.get("changeinOpenInterest", ""),
+        format_num(ce_bid),
+        format_num(ce_ask),
+        format_num(ce_spread),
         pe_data.get("lastPrice", ""),
         pe_data.get("impliedVolatility", ""),
         pe_data.get("totalTradedVolume", ""),
         pe_data.get("openInterest", ""),
-        pe_data.get("changeinOpenInterest", "")
+        pe_data.get("changeinOpenInterest", ""),
+        format_num(pe_bid),
+        format_num(pe_ask),
+        format_num(pe_spread)
     ]
 
+    # Insert at top (row 2)
     SHEET.insert_row(row, index=2, value_input_option="USER_ENTERED")
-    SHEET.format('A2:M2', {
-        "backgroundColor": {"red": 1, "green": 1, "blue": 0.8}
+
+    # Highlight row 2 with light yellow background
+    SHEET.format('A2:S2', {
+        "backgroundColor": {"red": 1, "green": 1, "blue": 0.8}  # Light yellow
     })
 
     print(f"✅ Logged ATM {atm_strike} at {row[0]} | Expiry: {expiry_date}")
@@ -115,4 +133,5 @@ if __name__ == "__main__":
         append_atm_to_sheet(nse_data)
     except Exception as e:
         print(f"❌ Error fetching/appending data: {e}")
+
 
