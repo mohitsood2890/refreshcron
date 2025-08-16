@@ -2,8 +2,9 @@ name: Run Refreshcron
 
 on:
   schedule:
-    - cron: "*/3 * * * *"  # Every 3 minutes (UTC time)
-  workflow_dispatch:  # Allows manual trigger
+    # Every 3 minutes between 03:00–10:30 UTC (09:00–16:00 IST), Mon–Fri
+    - cron: "*/3 3-10 * * 1-5"
+  workflow_dispatch:
 
 concurrency:
   group: cron-job
@@ -23,7 +24,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install cloudscraper gspread oauth2client
+          pip install cloudscraper gspread oauth2client pytz
 
       - name: Run Scripts
         env:
