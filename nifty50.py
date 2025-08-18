@@ -41,7 +41,7 @@ except Exception as e:
     exit(1)
 
 try:
-    SHEET = CLIENT.open("Refreshcron").sheet2   # Always use second sheet
+    SHEET = CLIENT.open("Refreshcron").worksheet("Sheet2")   # Always use second sheet
     print("✅ Google Sheet opened successfully")
 except Exception as e:
     print("❌ ERROR opening sheet:", e)
