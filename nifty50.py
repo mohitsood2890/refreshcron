@@ -1,12 +1,11 @@
 import os
 import base64
 import json
-import time
 import gspread
 import cloudscraper
 from oauth2client.service_account import ServiceAccountCredentials
-from datetime import datetime, timedelta
-import pytz  # ✅ for timezone
+from datetime import datetime
+import pytz
 
 print("🚀 Script started...")
 
@@ -42,46 +41,61 @@ except Exception as e:
     exit(1)
 
 try:
-    SHEET = CLIENT.open("Refreshcron").worksheet("Sheet2")
-    print("✅ Sheet2 opened successfully")
+    SHEET = CLIENT.open("Refreshcron").sheet1   # Always use first sheet
+    print("✅ Google Sheet opened successfully")
 except Exception as e:
-    print("❌ ERROR opening Sheet2:", e)
+    print("❌ ERROR opening sheet:", e)
     exit(1)
 
-# ==== TIME CHECK (EXIT IF OUTSIDE TRADING HOURS) ====
-now = get_ist_now()
-if not (datetime.strptime("09:12", "%H:%M").time() <= now.time() <= datetime.strptime("15:45", "%H:%M").time()):
-    print("⏰ Outside trading hours, skipping execution...")
+# ==== AUTO-CREATE HEADERS ====
+HEADERS = ["Timestamp", "Price", "Status"]
 
-    try:
-        SHEET.append_row([now.strftime("%Y-%m-%d %H:%M:%S"), "Skipped (Outside Trading Hours)"],
-                         value_input_option="USER_ENTERED")
-        print("✅ Logged skip to Google Sheet")
-    except Exception as e:
-        print(f"⚠️ Could not log skip to Google Sheet: {e}")
-
-    exit()
+try:
+    first_row = SHEET.row_values(1)
+    if first_row != HEADERS:
+        SHEET.delete_rows(1)  # remove old row 1 if exists
+        SHEET.insert_row(HEADERS, 1)
+        print("✅ Headers set successfully:", HEADERS)
+except Exception as e:
+    print(f"⚠️ Could not set headers: {e}")
 
 # ==== NSE API ====
 NSE_URL = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
 
 def fetch_nifty_spot():
-    scraper = cloudscraper.create_scraper(browser={"browser": "chrome", "platform": "windows", "mobile": False})
+    scraper = cloudscraper.create_scraper(
+        browser={"browser": "chrome", "platform": "windows", "mobile": False}
+    )
     scraper.get("https://www.nseindia.com", timeout=10)
     resp = scraper.get(NSE_URL, timeout=10)
+    print("🔍 NSE Response Status:", resp.status_code)
     data = resp.json()
-    return data["records"]["underlyingValue"]  # ✅ NIFTY spot
+    return data["records"]["underlyingValue"]
 
-# ==== MAIN LOOP ====
 # ==== MAIN EXECUTION ====
+now = get_ist_now()
+timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+
 try:
-    price = fetch_nifty_spot()
-    timestamp = get_ist_now().strftime("%Y-%m-%d %H:%M:%S")
-    row = [timestamp, price]   # Column A = timestamp, Column B = price
+    if datetime.strptime("09:12", "%H:%M").time() <= now.time() <= datetime.strptime("15:45", "%H:%M").time():
+        # Inside trading hours → fetch price
+        price = fetch_nifty_spot()
+        row = [timestamp, price, "OK"]
+        print("📝 Writing to Google Sheet:", row)
+        SHEET.append_row(row, value_input_option="USER_ENTERED")
+        print(f"✅ Logged NIFTY at {timestamp} = {price}")
+    else:
+        # Outside hours → log skip
+        row = [timestamp, "-", "Skipped (Outside Trading Hours)"]
+        print("📝 Writing to Google Sheet:", row)
+        SHEET.append_row(row, value_input_option="USER_ENTERED")
+        print("⏰ Outside trading hours, logged skip")
 
-    SHEET.append_row(row, value_input_option="USER_ENTERED")
-
-    print(f"✅ Logged NIFTY at {timestamp} = {price}")
 except Exception as e:
-    print(f"❌ Error: {e}")
-
+    # Always log error
+    row = [timestamp, "-", f"Error: {e}"]
+    print("📝 Writing to Google Sheet:", row)
+    try:
+        SHEET.append_row(row, value_input_option="USER_ENTERED")
+    except Exception as g:
+        print(f"❌ Failed to log error to sheet: {g}")
