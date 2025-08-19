@@ -11,8 +11,10 @@ print("🚀 Script started...")
 
 # ==== IST TIME HELPER ====
 def get_ist_now():
-    ist = pytz.timezone("Asia/Kolkata")
-    return datetime.now(ist)
+
+ist = pytz.timezone("Asia/Kolkata")
+print("🚀 Script triggered at:", datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S"))
+
 
 # ==== DECODE CREDENTIALS FROM BASE64 SECRET ====
 if "CREDENTIALS_JSON" not in os.environ:
