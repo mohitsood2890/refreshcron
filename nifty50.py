@@ -86,13 +86,13 @@ try:
         price = fetch_nifty_spot()
         row = [timestamp, price, "OK"]
         print("📝 Writing to Google Sheet:", row)
-        SHEET.append_row(row, value_input_option="USER_ENTERED")
+        SHEET.insert_row(row, 2, value_input_option="USER_ENTERED")
         print(f"✅ Logged NIFTY at {timestamp} = {price}")
     else:
         # Outside hours → log skip
         row = [timestamp, "-", "Skipped (Outside Trading Hours)"]
         print("📝 Writing to Google Sheet:", row)
-        SHEET.append_row(row, value_input_option="USER_ENTERED")
+        SHEET.insert_row(row, 2, value_input_option="USER_ENTERED")
         print("⏰ Outside trading hours, logged skip")
 
 except Exception as e:
@@ -100,6 +100,6 @@ except Exception as e:
     row = [timestamp, "-", f"Error: {e}"]
     print("📝 Writing to Google Sheet:", row)
     try:
-        SHEET.append_row(row, value_input_option="USER_ENTERED")
+        SHEET.insert_row(row, 2, value_input_option="USER_ENTERED")
     except Exception as g:
         print(f"❌ Failed to log error to sheet: {g}")
